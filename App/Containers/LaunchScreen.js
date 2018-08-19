@@ -3,15 +3,16 @@ import {
   TouchableOpacity,
   Text,
   View,
+  ScrollView,
   StatusBar,
   StyleSheet,
-  YellowBox
+  YellowBox,
+  Animated,
+  Alert
 } from 'react-native';
 import axios from 'axios';
 import FlatList, { ParallaxImage } from 'react-native-parallax-flatlist';
-/* import CircleMenu from '@ramotion/react-native-circle-menu'; */
-//import Icon from 'react-native-vector-icons/Ionicons';
-import { Metrics } from '../Themes';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Styles
 import styles from './Styles/LaunchScreenStyles';
@@ -23,99 +24,154 @@ class LaunchScreen extends Component {
     super(props);
 
     this.state = {
-      movieList: []
+      movieList: [],
+      hidden: true,
+      activeFilter: 'upcoming'
     };
+
+    this.menuAnim = new Animated.Value(0);
+
+    this.animate = this.animate.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     axios
       .get(
-        'https://api.themoviedb.org/3/movie/now_playing?api_key=52847a5fec3921c2383c109952fa0141&language=en-US&page=1'
+        `https://api.themoviedb.org/3/movie/${
+          this.state.activeFilter
+        }?api_key=c0df16afa65f79c9ca68765047fdcd56&language=en-US&page=1`
       )
       .then(response => {
-        this.setState({ loading: false, movieList: response.data.results });
+        this.setState({ movieList: response.data.results });
       });
   }
 
-  onPress = index => console.warn(`${this.items[index].name} icon pressed!`);
-
-  items = [
-    {
-      name: 'md-home',
-      color: '#298CFF'
-    },
-    {
-      name: 'md-search',
-      color: '#30A400'
-    },
-    {
-      name: 'md-time',
-      color: '#FF4B32'
-    },
-    {
-      name: 'md-settings',
-      color: '#8A39FF'
-    },
-    {
-      name: 'md-navigate',
-      color: '#FF6A00'
-    }
-  ];
+  animate(open) {
+    Animated.timing(this.menuAnim, {
+      toValue: open ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true
+    }).start();
+  }
 
   keyExtractor = item => item.title;
 
   render() {
+    const iconType = [
+      { color: 'white', type: 'fire', name: 'popular' },
+      { color: 'white', type: 'decagram', name: 'upcoming' },
+      { color: 'white', type: 'finance', name: 'top_rated' },
+      { color: 'white', type: 'theater', name: 'now_playing' }
+    ];
+
+    const translateX = this.menuAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-70, 0],
+      extrapolate: 'clamp'
+    });
+
     return (
       <View style={{ flex: 1 }}>
-        <StatusBar
-          translucent
-          hidden
-          barStyle="light-content"
-          backgroundColor="rgba(0, 0, 0, 0.251)"
-        />
+        <StatusBar translucent hidden />
 
-        <FlatList
-          data={this.state.movieList.slice(0, 15)}
-          keyExtractor={(item, index) => index}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={{
-                height: Metrics.screenHeight * 0.35,
-                justifyContent: 'flex-end'
-              }}
-              activeOpacity={0.85}
-              onPress={() => {}}
-            >
-              <ParallaxImage
-                style={[StyleSheet.absoluteFill]}
-                source={{
-                  uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`
-                }}
-                parallaxFactor={1}
-              />
-              <View
-                style={{
-                  flex: 0.2,
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(0,0,0, 0.3)'
-                }}
-              >
-                <Text
-                  style={{
-                    marginLeft: '3%',
-                    fontSize: 18,
-                    fontFamily: 'monospace',
-                    fontWeight: 'bold',
-                    color: 'white'
+        {/* {
+          <FlatList
+            data={this.state.movieList.slice(0, 16)}
+            extraData={this.state}
+            keyExtractor={(item, index) => index}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.movieItem} activeOpacity={0.85} onPress={() => {}}>
+                <ParallaxImage
+                  style={[StyleSheet.absoluteFill]}
+                  source={{
+                    uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`
                   }}
+                  parallaxFactor={0.5}
+                />
+                <View style={styles.titleContainer}>
+                  <Text style={styles.text}>{item.title}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        } */}
+        <ScrollView style={{ flex: 1 }}>
+          {this.state.movieList.map((prop, index) => {
+            if (index <= 16) {
+              return (
+                <TouchableOpacity
+                  style={styles.movieItem}
+                  activeOpacity={0.85}
+                  onPress={() => {}}
+                  key={index}
                 >
-                  {item.title}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-        {/* <CircleMenu bgColor="#E74C3C" items={this.items} onPress={this.onPress} /> */}
+                  <ParallaxImage
+                    style={[StyleSheet.absoluteFill]}
+                    source={{
+                      uri: `https://image.tmdb.org/t/p/w500${prop.poster_path}`
+                    }}
+                    parallaxFactor={0.5}
+                  />
+                  <View style={styles.titleContainer}>
+                    <Text style={styles.text}>{prop.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }
+            return null;
+          })}
+        </ScrollView>
+        <Animated.View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: 240,
+            width: 70,
+            position: 'absolute',
+            top: 250,
+            transform: [{ translateX }]
+          }}
+        >
+          {iconType.map((prop, index) => {
+            return (
+              <TouchableOpacity
+                onPress={() => {
+                  //this.setState({ activeFilter: prop.name });
+                  //this.setState({ hidden: !this.state.hidden });
+                  //Alert.alert(this.state.activeFilter);
+                }}
+                style={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: 60,
+                  width: 70,
+                  backgroundColor: 'rgba(0,0,0, 0.8)'
+                }}
+                key={index}
+              >
+                <Icon name={prop.type} size={22} color={prop.color} />
+              </TouchableOpacity>
+            );
+          })}
+        </Animated.View>
+
+        <TouchableOpacity
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: 60,
+            width: 70,
+            position: 'absolute',
+            top: 500,
+            backgroundColor: 'rgba(255,255,255, 0.9)'
+          }}
+          onPress={() => {
+            this.setState({ hidden: !this.state.hidden });
+            this.animate(this.state.hidden);
+          }}
+        >
+          <Icon name="filter" size={22} color="black" />
+        </TouchableOpacity>
       </View>
     );
   }
