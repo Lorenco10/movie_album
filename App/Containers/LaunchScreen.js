@@ -3,21 +3,26 @@ import {
   TouchableOpacity,
   Text,
   View,
-  ScrollView,
+  Easing,
+  TextInput,
   StatusBar,
   StyleSheet,
+  ScrollView,
   YellowBox,
   Animated,
-  Alert
+  Linking
 } from 'react-native';
 import axios from 'axios';
 import FlatList, { ParallaxImage } from 'react-native-parallax-flatlist';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Styles
+import { Metrics } from '../Themes';
 import styles from './Styles/LaunchScreenStyles';
 
 YellowBox.ignoreWarnings(['Warning:']);
+
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 class LaunchScreen extends Component {
   constructor(props) {
@@ -25,24 +30,71 @@ class LaunchScreen extends Component {
 
     this.state = {
       movieList: [],
+      searchList: [],
       hidden: true,
-      activeFilter: 'upcoming'
+      expanded: true,
+      openWeb: false,
+      searchWidth: new Animated.Value(70),
+      activeFilter: '',
+      text: '',
+      imdbId: ''
     };
 
     this.menuAnim = new Animated.Value(0);
+    this.searchAnim = new Animated.Value(0);
 
     this.animate = this.animate.bind(this);
+    this.animateSearch = this.animateSearch.bind(this);
+    this.getId = this.getId.bind(this);
   }
 
   componentDidMount() {
     axios
       .get(
-        `https://api.themoviedb.org/3/movie/${
-          this.state.activeFilter
-        }?api_key=c0df16afa65f79c9ca68765047fdcd56&language=en-US&page=1`
+        'https://api.themoviedb.org/3/movie/popular?api_key=c0df16afa65f79c9ca68765047fdcd56&language=en-US&page=1'
       )
       .then(response => {
         this.setState({ movieList: response.data.results });
+      });
+  }
+
+  shouldComponentUpdate(nextProps, nextState) {
+    if (this.state.activeFilter !== nextState.activeFilter) {
+      axios
+        .get(
+          `https://api.themoviedb.org/3/movie/${
+            nextState.activeFilter
+          }?api_key=c0df16afa65f79c9ca68765047fdcd56&language=en-US&page=1`
+        )
+        .then(response => {
+          this.setState({ movieList: response.data.results });
+        });
+      return true;
+    }
+    if (this.state.text !== nextState.text) {
+      axios
+        .get(
+          `https://api.themoviedb.org/3/search/movie?api_key=c0df16afa65f79c9ca68765047fdcd56&language=en-US&query=${
+            nextState.text
+          }&page=1&include_adult=false`
+        )
+        .then(response => {
+          this.setState({ searchList: response.data.results });
+        });
+      return true;
+    }
+    return true;
+  }
+
+  getId(movieId) {
+    axios
+      .get(
+        `https://api.themoviedb.org/3/movie/${movieId}/external_ids?api_key=c0df16afa65f79c9ca68765047fdcd56`
+      )
+      .then(response => {
+        this.setState({ imdbId: response.data.imdb_id }, () => {
+          Linking.openURL(`https://crawler.to/view?imdb=${this.state.imdbId}`);
+        });
       });
   }
 
@@ -50,13 +102,39 @@ class LaunchScreen extends Component {
     Animated.timing(this.menuAnim, {
       toValue: open ? 1 : 0,
       duration: 200,
+      easing: Easing.ease,
       useNativeDriver: true
     }).start();
+  }
+
+  animateSearch(expand) {
+    Animated.parallel(
+      [
+        Animated.timing(this.state.searchWidth, {
+          toValue: expand ? Metrics.screenWidth * 0.95 : 70,
+          duration: 300,
+          easing: Easing.ease
+        })
+        /* Animated.timing(this.searchAnim, {
+          toValue: expand ? 1 : 0,
+          duration: 300,
+          easing: Easing.ease
+        }) */
+      ],
+      {
+        useNativeDriver: true
+      }
+    ).start(() => {
+      setTimeout(() => {
+        this.setState({ expanded: !this.state.expanded, text: '' });
+      }, 1);
+    });
   }
 
   keyExtractor = item => item.title;
 
   render() {
+    const searchWidth = this.state.searchWidth;
     const iconType = [
       { color: 'white', type: 'fire', name: 'popular' },
       { color: 'white', type: 'decagram', name: 'upcoming' },
@@ -73,80 +151,38 @@ class LaunchScreen extends Component {
     return (
       <View style={{ flex: 1 }}>
         <StatusBar translucent hidden />
-
-        {/* {
-          <FlatList
-            data={this.state.movieList.slice(0, 16)}
-            extraData={this.state}
-            keyExtractor={(item, index) => index}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.movieItem} activeOpacity={0.85} onPress={() => {}}>
-                <ParallaxImage
-                  style={[StyleSheet.absoluteFill]}
-                  source={{
-                    uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`
-                  }}
-                  parallaxFactor={0.5}
-                />
-                <View style={styles.titleContainer}>
-                  <Text style={styles.text}>{item.title}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        } */}
-        <ScrollView style={{ flex: 1 }}>
-          {this.state.movieList.map((prop, index) => {
-            if (index <= 16) {
-              return (
-                <TouchableOpacity
-                  style={styles.movieItem}
-                  activeOpacity={0.85}
-                  onPress={() => {}}
-                  key={index}
-                >
-                  <ParallaxImage
-                    style={[StyleSheet.absoluteFill]}
-                    source={{
-                      uri: `https://image.tmdb.org/t/p/w500${prop.poster_path}`
-                    }}
-                    parallaxFactor={0.5}
-                  />
-                  <View style={styles.titleContainer}>
-                    <Text style={styles.text}>{prop.title}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            }
-            return null;
-          })}
-        </ScrollView>
-        <Animated.View
-          style={{
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: 240,
-            width: 70,
-            position: 'absolute',
-            top: 250,
-            transform: [{ translateX }]
-          }}
-        >
+        <FlatList
+          data={this.state.movieList.slice(0, 16)}
+          extraData={this.state}
+          keyExtractor={(item, index) => index}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.movieItem} activeOpacity={0.85} onPress={() => {}}>
+              <ParallaxImage
+                style={[StyleSheet.absoluteFill]}
+                source={{
+                  uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                }}
+                parallaxFactor={0.5}
+              />
+              <View style={styles.titleContainer}>
+                <Text style={styles.text}>{item.title}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        <Animated.View style={[styles.menu, { transform: [{ translateX }] }]}>
           {iconType.map((prop, index) => {
             return (
               <TouchableOpacity
-                onPress={() => {
-                  //this.setState({ activeFilter: prop.name });
-                  //this.setState({ hidden: !this.state.hidden });
-                  //Alert.alert(this.state.activeFilter);
-                }}
-                style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  height: 60,
-                  width: 70,
-                  backgroundColor: 'rgba(0,0,0, 0.8)'
-                }}
+                onPress={
+                  prop.name !== this.state.activeFilter
+                    ? () => {
+                        this.setState({ activeFilter: prop.name });
+                        //Alert.alert(this.state.activeFilter);
+                      }
+                    : null
+                }
+                style={styles.iconContainer}
                 key={index}
               >
                 <Icon name={prop.type} size={22} color={prop.color} />
@@ -156,15 +192,7 @@ class LaunchScreen extends Component {
         </Animated.View>
 
         <TouchableOpacity
-          style={{
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: 60,
-            width: 70,
-            position: 'absolute',
-            top: 500,
-            backgroundColor: 'rgba(255,255,255, 0.9)'
-          }}
+          style={styles.menuButton}
           onPress={() => {
             this.setState({ hidden: !this.state.hidden });
             this.animate(this.state.hidden);
@@ -172,6 +200,49 @@ class LaunchScreen extends Component {
         >
           <Icon name="filter" size={22} color="black" />
         </TouchableOpacity>
+        {this.state.text !== '' ? (
+          <ScrollView style={styles.scrollContainer} scrollEnabled={false}>
+            <View style={styles.searchItemsContainer}>
+              {this.state.searchList.map(prop => {
+                return (
+                  <TouchableOpacity
+                    style={styles.searchMovieItem}
+                    onPress={() => {
+                      this.getId(prop.id);
+                    }}
+                  >
+                    <View style={styles.searchTitleContainer}>
+                      <Text style={styles.searchText}>{prop.title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        ) : null}
+        <AnimatedTouchableOpacity
+          style={[styles.searchButton, { width: searchWidth }]}
+          activeOpacity={1}
+        >
+          <TouchableOpacity
+            style={styles.searchButtonContainer}
+            onPress={() => {
+              this.animateSearch(this.state.expanded);
+            }}
+          >
+            <Icon name="magnify" size={22} color="black" />
+          </TouchableOpacity>
+          {!this.state.expanded ? (
+            <TextInput
+              maxLength={50}
+              placeholder="Search Movies"
+              underlineColorAndroid="rgba(255,255,255, 0.0)"
+              style={styles.textInput}
+              onChangeText={text => this.setState({ text })}
+              value={this.state.text}
+            />
+          ) : null}
+        </AnimatedTouchableOpacity>
       </View>
     );
   }
