@@ -1,5 +1,5 @@
 import { StackNavigator } from 'react-navigation';
-import WebScreen from '../Containers/WebScreen';
+import MovieDetailScreen from '../Containers/MovieDetailScreen';
 import LaunchScreen from '../Containers/LaunchScreen';
 
 import styles from './Styles/NavigationStyles';
@@ -7,7 +7,7 @@ import styles from './Styles/NavigationStyles';
 // Manifest of possible screens
 const PrimaryNav = StackNavigator(
   {
-    WebScreen: { screen: WebScreen },
+    MovieDetailScreen: { screen: MovieDetailScreen },
     LaunchScreen: { screen: LaunchScreen }
   },
   {

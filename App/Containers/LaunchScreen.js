@@ -45,7 +45,7 @@ class LaunchScreen extends Component {
 
     this.animate = this.animate.bind(this);
     this.animateSearch = this.animateSearch.bind(this);
-    this.getId = this.getId.bind(this);
+    //this.getId = this.getId.bind(this);
   }
 
   componentDidMount() {
@@ -86,7 +86,7 @@ class LaunchScreen extends Component {
     return true;
   }
 
-  getId(movieId) {
+  /*   getId(movieId) {
     axios
       .get(
         `https://api.themoviedb.org/3/movie/${movieId}/external_ids?api_key=c0df16afa65f79c9ca68765047fdcd56`
@@ -96,31 +96,25 @@ class LaunchScreen extends Component {
           Linking.openURL(`https://crawler.to/view?imdb=${this.state.imdbId}`);
         });
       });
-  }
+  } */
 
   animate(open) {
     Animated.timing(this.menuAnim, {
       toValue: open ? 1 : 0,
       duration: 200,
-      easing: Easing.ease,
+      easing: Easing.out(Easing.back(0.01)),
       useNativeDriver: true
     }).start();
   }
 
   animateSearch(expand) {
-    Animated.parallel(
-      [
-        Animated.timing(this.state.searchWidth, {
-          toValue: expand ? Metrics.screenWidth * 0.95 : 70,
-          duration: 300,
-          easing: Easing.ease
-        })
-        /* Animated.timing(this.searchAnim, {
-          toValue: expand ? 1 : 0,
-          duration: 300,
-          easing: Easing.ease
-        }) */
-      ],
+    Animated.timing(
+      this.state.searchWidth,
+      {
+        toValue: expand ? Metrics.screenWidth * 0.95 : 70,
+        duration: 300,
+        easing: Easing.out(Easing.back(0.01))
+      },
       {
         useNativeDriver: true
       }
@@ -134,6 +128,7 @@ class LaunchScreen extends Component {
   keyExtractor = item => item.title;
 
   render() {
+    const { navigation } = this.props;
     const searchWidth = this.state.searchWidth;
     const iconType = [
       { color: 'white', type: 'fire', name: 'popular' },
@@ -156,7 +151,15 @@ class LaunchScreen extends Component {
           extraData={this.state}
           keyExtractor={(item, index) => index}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.movieItem} activeOpacity={0.85} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.movieItem}
+              activeOpacity={0.85}
+              onPress={() => {
+                navigation.navigate('MovieDetailScreen', {
+                  movieInfo: item
+                });
+              }}
+            >
               <ParallaxImage
                 style={[StyleSheet.absoluteFill]}
                 source={{
@@ -201,14 +204,18 @@ class LaunchScreen extends Component {
           <Icon name="filter" size={22} color="black" />
         </TouchableOpacity>
         {this.state.text !== '' ? (
-          <ScrollView style={styles.scrollContainer} scrollEnabled={false}>
+          <ScrollView style={styles.scrollContainer}>
             <View style={styles.searchItemsContainer}>
               {this.state.searchList.map(prop => {
                 return (
                   <TouchableOpacity
                     style={styles.searchMovieItem}
                     onPress={() => {
-                      this.getId(prop.id);
+                      navigation.navigate('MovieDetailScreen', {
+                        movieInfo: prop
+                      });
+                      //this.getId(prop.id);
+                      //Linking.openURL(`https://crawler.to/search/${prop.title}`);
                     }}
                   >
                     <View style={styles.searchTitleContainer}>
