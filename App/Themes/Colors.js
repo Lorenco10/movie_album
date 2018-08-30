@@ -21,7 +21,11 @@ const colors = {
   eggplant: '#251a34',
   border: '#483F53',
   banner: '#5F3E63',
-  text: '#E0D7E5'
+  text: '#E0D7E5',
+  card: '#292836',
+  date: '#494856',
+  rate: '#52a08d',
+  textBox: '#c1ceda'
 };
 
 export default colors;
