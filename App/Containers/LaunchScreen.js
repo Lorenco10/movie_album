@@ -79,7 +79,7 @@ class LaunchScreen extends Component {
           }&page=1&include_adult=false`
         )
         .then(response => {
-          this.setState({ searchList: response.data.results });
+          this.setState({ movieList: response.data.results });
         });
       return true;
     }
@@ -104,7 +104,9 @@ class LaunchScreen extends Component {
       duration: 200,
       easing: Easing.out(Easing.back(0.01)),
       useNativeDriver: true
-    }).start();
+    }).start(() => {
+      this.setState({ hidden: !this.state.hidden });
+    });
   }
 
   animateSearch(expand) {
@@ -181,6 +183,7 @@ class LaunchScreen extends Component {
                   prop.name !== this.state.activeFilter
                     ? () => {
                         this.setState({ activeFilter: prop.name });
+                        this.animate(this.state.hidden);
                         //Alert.alert(this.state.activeFilter);
                       }
                     : null
@@ -197,13 +200,12 @@ class LaunchScreen extends Component {
         <TouchableOpacity
           style={styles.menuButton}
           onPress={() => {
-            this.setState({ hidden: !this.state.hidden });
             this.animate(this.state.hidden);
           }}
         >
           <Icon name="filter" size={22} color="black" />
         </TouchableOpacity>
-        {this.state.text !== '' ? (
+        {/* {this.state.text !== '' ? (
           <ScrollView style={styles.scrollContainer}>
             <View style={styles.searchItemsContainer}>
               {this.state.searchList.map(prop => {
@@ -226,7 +228,7 @@ class LaunchScreen extends Component {
               })}
             </View>
           </ScrollView>
-        ) : null}
+        ) : null} */}
         <AnimatedTouchableOpacity
           style={[styles.searchButton, { width: searchWidth }]}
           activeOpacity={1}
@@ -247,6 +249,9 @@ class LaunchScreen extends Component {
               style={styles.textInput}
               onChangeText={text => this.setState({ text })}
               value={this.state.text}
+              onSubmitEditing={() => {
+                this.animateSearch(this.state.expanded);
+              }}
             />
           ) : null}
         </AnimatedTouchableOpacity>

@@ -146,7 +146,7 @@ class MovieDetailScreen extends Component {
                     }
                   ]}
                 >
-                  {this.state.cast.slice(0, 4).map(prop => {
+                  {this.state.cast.slice(0, 7).map(prop => {
                     return (
                       <View style={styles.castBox}>
                         <Image
@@ -163,8 +163,26 @@ class MovieDetailScreen extends Component {
                     );
                   })}
                 </View>
-                <Text style={styles.sectionText}>Tags</Text>
-                <View style={styles.tagsBox}>
+                <Text style={styles.sectionText}>Director/s</Text>
+                <View style={[styles.tagsBox, { paddingTop: Metrics.screenHeight * 0.04 }]}>
+                  {this.state.crew.map(prop => {
+                    return prop.job === 'Director' ? (
+                      <View style={styles.tagBox}>
+                        <Text style={styles.tagText}>{prop.name}</Text>
+                      </View>
+                    ) : null;
+                  })}
+                </View>
+                <Text style={styles.sectionText}>Genres</Text>
+                <View
+                  style={[
+                    styles.tagsBox,
+                    {
+                      marginTop: 0,
+                      paddingTop: Metrics.screenHeight * 0.04
+                    }
+                  ]}
+                >
                   {this.state.movieDetails.genres.map(prop => {
                     return (
                       <View style={styles.tagBox}>
@@ -174,11 +192,29 @@ class MovieDetailScreen extends Component {
                   })}
                 </View>
                 <Text style={styles.sectionText}>RunTime</Text>
-                <View style={[styles.tagBox, { alignSelf: 'center' }]}>
-                  <Text style={styles.tagText}>{this.state.movieDetails.runtime} min</Text>
+                <View
+                  style={[
+                    styles.tagsBox,
+                    {
+                      marginTop: 0,
+                      paddingTop: Metrics.screenHeight * 0.04
+                    }
+                  ]}
+                >
+                  <View style={styles.tagBox}>
+                    <Text style={styles.tagText}>{this.state.movieDetails.runtime} min</Text>
+                  </View>
                 </View>
                 <Text style={styles.sectionText}>Budget / Revenue</Text>
-                <View style={styles.tagsBox}>
+                <View
+                  style={[
+                    styles.tagsBox,
+                    {
+                      marginTop: 0,
+                      paddingTop: Metrics.screenHeight * 0.04
+                    }
+                  ]}
+                >
                   <View style={[styles.tagBox, { backgroundColor: '#F44336' }]}>
                     <Text style={[styles.tagText, { color: 'white' }]}>
                       {this.state.movieDetails.budget !== null
